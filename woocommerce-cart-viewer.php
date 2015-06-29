@@ -5,8 +5,8 @@
  * Version: 0.0.1
  * Author: Paxinstruments
  * Author URI: https://github.com/paxinstruments
- * Plugin URI: https://github.com/PaxInstruments/woocommerse-cart-viewer
- * GitHub Plugin URI: https://github.com/PaxInstruments/woocommerse-cart-viewer
+ * Plugin URI: https://github.com/PaxInstruments/woocommerce-cart-viewer
+ * GitHub Plugin URI: https://github.com/PaxInstruments/woocommerce-cart-viewer
  * License: GPL2
  */
 
