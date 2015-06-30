@@ -20,11 +20,16 @@ Email
      
      function __construct()
      {
-         add_action( 'admin_menu', array($this, 'admin_menu') );
-         add_action('woocommerce_cart_updated', array(&$this, 'woocommerce_wcv_cart_updated'));
-         //woocommerce_add_to_cart| $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data );
+        add_action( 'init', array( &$this, 'init' ) );
+        add_action( 'admin_menu', array( &$this, 'admin_menu') );
+        add_action('woocommerce_cart_updated', array(&$this, 'woocommerce_wcv_cart_updated'));
+        //woocommerce_add_to_cart| $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data );
      }
 
+     public function init()
+     {
+         add_action('wp_enqueue_scripts', array($this, 'load_css') );
+     }
      public function admin_menu()
      {
         if ( current_user_can( 'manage_woocommerce' ) ) {
@@ -32,15 +37,71 @@ Email
         }
      }
 
+     public function load_css()
+     {
+        die();
+        wp_enqueue_style( 'wcv_style', WCV_CSS.'style.css' );
+     }
+
+     public function wcv_view_session($session)
+     {
+        global $wpdb;
+        $url =  $_SERVER['REQUEST_URI'];
+        $table_name = $wpdb->base_prefix . "cv_history";
+        $query = "SELECT * from $table_name WHERE data LIKE %s;";
+        $results = $wpdb->get_row( $wpdb->prepare($query, "%$session%"), ARRAY_A );
+
+        if(!empty($results)){
+            $data = json_decode($results['data'], true);
+            $back = remove_query_arg('viewsession', $url);
+            print "<a href='$back'>Go back to session view</a>";
+            print '<h1>Viewing Session</h1>'; 
+            foreach ($data['items'] as $item) {
+                $product = wc_get_product($item['product_id']);
+                $pimg = $product->get_image();
+                $title = $product->get_title();
+                $quantity = $item['quantity'];
+                //print_r($item);
+                print "<div class='wcv_info'>
+                            $pimg
+                            <div class='wcv_info_data'>
+                            <span>$title</span><br>
+                            <span>$quantity items</span><br>
+                            <span>variation?</span>
+                            </div>
+                        </div>
+                        ";
+                print '<hr>';
+            }
+        }
+
+        ?>
+<div class='wcv_info'>
+<img style='float' width="120" height="87" src="http://192.168.99.100:32774/wp-content/uploads/2015/04/IMG_1575-120x87.jpg" class="attachment-shop_thumbnail wp-post-image" alt="IMG_1575">
+    <div class='wcv_info_data'>
+        <span>Title of the products</span><br>
+        <span>34 items</span><br>
+        <span>variation?</span>
+    </div>
+</div>
+        <?php
+        
+     }
+
      public function wcv_view()
      {
         global $wpdb;
-
+        if(isset($_GET['viewsession'])){
+            $this->wcv_view_session( $_GET['viewsession'] );
+            return;
+        }
         $table_name = $wpdb->base_prefix . "cv_history";
         $query = "SELECT * from $table_name;";
         $results = $wpdb->get_results( $query, ARRAY_A );
 
         $filtered = array();
+
+        $url =  $_SERVER['REQUEST_URI'];
 
         foreach ($results as $row) {
 
@@ -53,13 +114,13 @@ Email
             }
 
             $nrow['Session'] = $data['cookie'];
-            $nrow['Data'] = "$citems items in cart by user {$data['server']['REMOTE_ADDR']}";
+            $nurl = add_query_arg( array('viewsession'=>$row['id']), $url );
+            $nrow['Data'] = "<a href='$nurl'>$citems items in cart by user {$data['server']['REMOTE_ADDR']}";
             $nrow['Time'] = date('Y/m/d h:i:s', strtotime($row['time']));
 
             $filtered[] = $nrow;
         }
 
-        // if(count($results) > 0){
         print "<h1>Cart Sessions</h1>";
         $this->html_show_array($filtered);
         // }
