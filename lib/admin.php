@@ -20,16 +20,12 @@ Email
      
      function __construct()
      {
-        add_action( 'init', array( &$this, 'init' ) );
+        add_action( 'admin_enqueue_scripts', array($this, 'load_css') );
         add_action( 'admin_menu', array( &$this, 'admin_menu') );
         add_action('woocommerce_cart_updated', array(&$this, 'woocommerce_wcv_cart_updated'));
         //woocommerce_add_to_cart| $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data );
      }
 
-     public function init()
-     {
-         add_action('wp_enqueue_scripts', array($this, 'load_css') );
-     }
      public function admin_menu()
      {
         if ( current_user_can( 'manage_woocommerce' ) ) {
@@ -39,7 +35,6 @@ Email
 
      public function load_css()
      {
-        die();
         wp_enqueue_style( 'wcv_style', WCV_CSS.'style.css' );
      }
 
@@ -48,14 +43,13 @@ Email
         global $wpdb;
         $url =  $_SERVER['REQUEST_URI'];
         $table_name = $wpdb->base_prefix . "cv_history";
-        $query = "SELECT * from $table_name WHERE data LIKE %s;";
-        $results = $wpdb->get_row( $wpdb->prepare($query, "%$session%"), ARRAY_A );
-
+        $query = "SELECT * from $table_name WHERE id = %s;";
+        $results = $wpdb->get_row( $wpdb->prepare($query, $session), ARRAY_A );
+        $back = remove_query_arg('viewsession', $url);
+        print "<a href='$back'>Go back to session view</a>";
+        print '<h1>Viewing Session</h1>';
         if(!empty($results)){
             $data = json_decode($results['data'], true);
-            $back = remove_query_arg('viewsession', $url);
-            print "<a href='$back'>Go back to session view</a>";
-            print '<h1>Viewing Session</h1>'; 
             foreach ($data['items'] as $item) {
                 $product = wc_get_product($item['product_id']);
                 $pimg = $product->get_image();
@@ -71,20 +65,9 @@ Email
                             </div>
                         </div>
                         ";
-                print '<hr>';
+                //print '<hr>';
             }
         }
-
-        ?>
-<div class='wcv_info'>
-<img style='float' width="120" height="87" src="http://192.168.99.100:32774/wp-content/uploads/2015/04/IMG_1575-120x87.jpg" class="attachment-shop_thumbnail wp-post-image" alt="IMG_1575">
-    <div class='wcv_info_data'>
-        <span>Title of the products</span><br>
-        <span>34 items</span><br>
-        <span>variation?</span>
-    </div>
-</div>
-        <?php
         
      }
 
