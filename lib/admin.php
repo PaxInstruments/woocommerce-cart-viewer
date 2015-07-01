@@ -71,6 +71,45 @@ Email
         
      }
 
+     public function pagnation($page, $size, $num_per_page)
+     {
+        $url =  $_SERVER['REQUEST_URI'];
+
+        $limit = '';
+        $pagnation = '';
+
+        try {
+            $page = intval($page);
+            $limit = sprintf('LIMIT %d, %d', $page * $num_per_page, $num_per_page );
+            $pages = ($size/$num_per_page) % 10;
+
+            $previous = add_query_arg( array('p'=>$page-1), $url );
+            if( $page>0 ){
+                $pagnation = "<a href='$previous'>&lt; previous</a>";
+            } else {
+                $pagnation = "&lt; previous";
+            }
+            for ($i=0; $i < $pages+1; $i++) { 
+                $lpage = add_query_arg( array('p'=>$i), $url );
+                $vp = $i+1;
+                if ( $i != $page ) {
+                    $pagnation .= " | <a href='$lpage'>$vp</a> ";
+                } else {
+                    $pagnation .= " | $vp ";
+                }
+            }
+            $next = add_query_arg( array('p'=>$page+1), $url );
+            if ( $page < $pages ) {
+                $pagnation .= "| <a href='$next'>next &gt;</a>";
+            } else {
+                $pagnation .= "| next &gt;";
+            }
+        } catch (Exception $e) {
+            
+        }
+        return array($pagnation, $limit);
+     }
+
      public function wcv_view()
      {
         global $wpdb;
@@ -79,7 +118,20 @@ Email
             return;
         }
         $table_name = $wpdb->base_prefix . "cv_history";
-        $query = "SELECT * from $table_name;";
+        $limit = '';
+
+        
+        $pagnation = '';
+        $num_per_page = 10;
+        $get_size = "SELECT count(*) from $table_name;";
+        $size = $wpdb->get_var( $get_size );
+
+        $p = (isset($_GET['p'])) ? $_GET['p'] : '0';
+        $pag = $this->pagnation($p, $size, $num_per_page);
+        $pagnation = $pag[0];
+        $limit = $pag[1];
+
+        $query = "SELECT * from $table_name $limit;";
         $results = $wpdb->get_results( $query, ARRAY_A );
 
         $filtered = array();
@@ -105,11 +157,8 @@ Email
         }
 
         print "<h1>Cart Sessions</h1>";
+        print "$pagnation<br>";
         $this->html_show_array($filtered);
-        // }
-        //print '<pre>'; 
-        //print $results[];
-        //print_r($results);
      }
 
      public function woocommerce_wcv_cart_updated()
@@ -128,26 +177,26 @@ Email
                 );
         }
         if(empty($data) or ! defined('COOKIEHASH')) return;
-        //$customer_id, $session_expiration, $session_expiring, $cookie_hash 
-        $session = WC()->session->get_session_cookie(); #$cart->has_session();
+        
+        $session = WC()->session->get_session_cookie(); //$customer_id, $session_expiration, $session_expiring, $cookie_hash 
         $user_id = get_current_user_id();
         
         $useful = array(
                 'session' => COOKIEHASH,
-                'cookie' => $session[3],
+                'cookie' => $session[3], // $cookie_hash 
                 'server' => array( 
                     'HTTP_USER_AGENT' => $_SERVER['HTTP_USER_AGENT'], 
                     'REMOTE_ADDR' => $_SERVER['REMOTE_ADDR'] ),
                 'user_id' => $user_id,
                 'items' => $items
             );
-        //variation_id, product_id, quantity, 
+         
         
         $jdata=json_encode($useful);
         $current_time = current_time('timestamp');
 
         $table_name = $wpdb->base_prefix . "cv_history";
-        
+
         $has_cart = "SELECT id FROM $table_name WHERE `data` like '%".$useful['cookie']."%' ";
         $cart_id = $wpdb->get_var($has_cart);
 
