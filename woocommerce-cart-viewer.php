@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WooCommerce Cart Viewer
  * Description: View cart session details
- * Version: 0.0.1
+ * Version: 0.0.2
  * Author: Paxinstruments
  * Author URI: https://github.com/paxinstruments
  * Plugin URI: https://github.com/PaxInstruments/woocommerce-cart-viewer
@@ -33,7 +33,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
         /**
          * @var string
          */
-        public $version = '0.0.1';
+        public $version = '0.0.2';
 
         /**
          * Constructor
