@@ -61,7 +61,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
          */
         function load_plugin_textdomain() {
 
-            load_plugin_textdomain( 'woocommerse-cart-viewer', false, plugin_basename( dirname( __FILE__ ) ) . "/languages" );
+            //load_plugin_textdomain( 'woocommerse-cart-viewer', false, plugin_basename( dirname( __FILE__ ) ) . "/languages" );
         }
 
         /**

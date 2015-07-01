@@ -13,3 +13,8 @@
     display: flex;
 }
 
+.deleteitem {
+    color: blue;
+    text-decoration: underline;
+    cursor: pointer;
+}

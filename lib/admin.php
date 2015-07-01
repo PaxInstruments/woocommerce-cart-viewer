@@ -20,9 +20,10 @@ Email
      
      function __construct()
      {
-        add_action( 'admin_enqueue_scripts', array($this, 'load_css') );
+        add_action( 'admin_enqueue_scripts', array(&$this, 'load_css') );
         add_action( 'admin_menu', array( &$this, 'admin_menu') );
         add_action('woocommerce_cart_updated', array(&$this, 'woocommerce_wcv_cart_updated'));
+        add_action('wp_ajax_wcv_delete_items', array(&$this, 'wcv_delete_items'));
         //woocommerce_add_to_cart| $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data );
      }
 
@@ -36,6 +37,27 @@ Email
      public function load_css()
      {
         wp_enqueue_style( 'wcv_style', WCV_CSS.'style.css' );
+        wp_enqueue_script( 'delete-wcv-items', WCV_JS. 'delete_items.js', array('jquery'), false, true );
+     }
+
+     public function wcv_delete_items()
+     {
+        global $wpdb;
+        $itemid = $_POST['id'];
+
+        $table_name = $wpdb->base_prefix . "cv_history";
+
+        if(is_numeric($itemid) and wp_verify_nonce($_POST['nonce'], 'wcv_delete_'.$itemid)){
+            $query = "DELETE FROM $table_name where `id`=%d;";
+            print "deleted $itemid. ";
+            $wpdb->query($wpdb->prepare($query, $itemid));
+        } elseif($itemid == 'clear') {
+            $query = "DELETE FROM $table_name;";
+            $wpdb->query($query);
+            print "table cleared. ";
+        }
+        print 'done.';
+        die();
      }
 
      public function wcv_view_session($session)
@@ -153,20 +175,25 @@ Email
             $nrow['Data'] = "<a href='$nurl'>$citems items in cart by user {$data['server']['REMOTE_ADDR']}";
             $nrow['Time'] = date('Y/m/d h:i:s', strtotime($row['time']));
 
+            $nrow['Action'] = "<div id='{$row['id']}' data-nonce='".wp_create_nonce('wcv_delete_'.$row['id'])."' class='deleteitem'>delete</div>";
             $filtered[] = $nrow;
         }
-
+        print "<div class='wcvinforesponse'></div>";
         print "<h1>Cart Sessions</h1>";
         print "$pagnation<br>";
         $this->html_show_array($filtered);
+        print "<div id='clear' class='deleteitem'>clear all items</div>";
      }
 
      public function woocommerce_wcv_cart_updated()
      {
+        //print '<pre>'; print_r(WC()->session->get_session_data()); print '</pre>';die();
+        //if( !isset($_POST['action']) )return; // this function gets run during ajax calls, in a infinite loop?
         global $wpdb;
-        $cart = new WC_Cart();
-        $cart->get_cart_from_session();
-        $data = $cart->get_cart();
+        // $cart = new WC_Cart();
+        // $cart->get_cart_from_session();
+        // $data = $cart->get_cart();
+        $data = unserialize( WC()->session->get_session_data()['cart'] );
         $items = array();
         foreach ($data as $key => $value) {
             ////variation_id, product_id, quantity, 
@@ -219,6 +246,10 @@ Email
      }
 
     function html_show_array($table) {
+        if(empty($table)) {
+            print 'No sessions available.';
+            return;
+        }
         //wp-list-table widefat fixed striped posts
         echo "<table class='wp-list-table widefat fixed striped posts'>";
         
