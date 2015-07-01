@@ -1,0 +1,15 @@
+
+
+.wcv_info img{
+    float: left;
+    clear: left;
+    padding-right: 10px;
+}
+
+
+.wcv_info {
+    padding: 10px;
+    clear: right;
+    display: flex;
+}
+
